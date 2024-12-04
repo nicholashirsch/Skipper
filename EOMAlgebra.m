@@ -46,6 +46,13 @@ syms x y z xDot yDot zDot xDDot yDDot zDDot ...
 %    T0 xi0 zeta0 tauR0
 
 
+% Define rotation matricies used in shifting all terms in the EOM to V.
+Tu2t = euler2rMatrix(zeta, 2)*euler2rMatrix(xi, 3);
+Tt2u = Tu2t';
+
+Tu2v = euler2rMatrix(psi, 1)*euler2rMatrix(theta, 2)*euler2rMatrix(phi, 3);
+Tv2u = Tu2v';
+
 % p, q, r, pDot, qDot, and rDot are intermediate variables which may be
 % defined in terms of the Euler angles and their derivatives.
 p = phiDot - psiDot*sin(theta);
@@ -59,114 +66,92 @@ rDot = psiDDot*cos(phi)*cos(theta) - psiDot*sin(phi)*phiDot*cos(theta) ...
 
 
 % Euler's 1st law; in x, y, z axis order.
-eqn1  = T*cos(xi)*cos(zeta) + M*g*sin(theta) ...
-    == xDDot*cos(theta)*cos(psi) + yDDot*cos(theta)*sin(psi) - zDDot*sin(theta);
-
-% Splitting each equation into right hand side and left hand side to do
-% taylor linear approximations.
 eqn1LHS = T*cos(xi)*cos(zeta) + M*g*sin(theta);
 eqn1RHS = xDDot*cos(theta)*cos(psi) + yDDot*cos(theta)*sin(psi) - zDDot*sin(theta);
-
-
-eqn2  = -T*sin(xi) - M*g*sin(phi)*sin(theta) ...
-    == xDDot*(cos(phi)*sin(psi)+sin(phi)*sin(theta)*cos(psi)) ...
-    + yDDot*(cos(phi)*cos(psi)+sin(phi)*sin(theta)*sin(psi)) + zDDot*sin(phi)*cos(theta);
+eqn1    = eqn1LHS == eqn1RHS;
 
 eqn2LHS = -T*sin(xi) - M*g*sin(phi)*sin(theta);
 eqn2RHS = xDDot*(cos(phi)*sin(psi)+sin(phi)*sin(theta)*cos(psi)) ...
     + yDDot*(cos(phi)*cos(psi)+sin(phi)*sin(theta)*sin(psi)) + zDDot*sin(phi)*cos(theta);
-
-
-eqn3  = T*cos(xi)*sin(zeta) - M*g*cos(phi)*cos(theta) ...
-    == xDDot*(sin(phi)*sin(psi)+cos(phi)*sin(theta)*cos(psi)) ...
-    + yDDot*(-sin(phi)*cos(psi)+cos(phi)*sin(theta)*sin(psi)) + zDDot*cos(phi)*cos(theta);
+eqn2    = eqn2LHS == eqn2RHS;
 
 eqn3LHS = T*cos(xi)*sin(zeta) - M*g*cos(phi)*cos(theta);
 eqn3RHS = xDDot*(sin(phi)*sin(psi)+cos(phi)*sin(theta)*cos(psi)) ...
     + yDDot*(-sin(phi)*cos(psi)+cos(phi)*sin(theta)*sin(psi)) + zDDot*cos(phi)*cos(theta);
+eqn3    = eqn3LHS == eqn3RHS;
 
 
 % Euler's 2nd law; in p, q, r order rotation order.
-eqn4  = tauR == Ixx*pDot + p*q*r*(Izz-Iyy);
-
 eqn4LHS = tauR;  % pretty stooopid o_O
 eqn4RHS = Ixx*pDot + p*q*r*(Izz-Iyy);
-
-eqn5  = rho2*T*cos(xi)*sin(zeta) == Iyy*qDot + p*q*r*(Izz-Ixx);
+eqn4    = eqn4LHS == eqn4RHS;
 
 eqn5LHS = rho2*T*cos(xi)*sin(zeta);
 eqn5RHS = Iyy*qDot + p*q*r*(Izz-Ixx);
-
-eqn6  = rho2*T*sin(xi) == Izz*rDot + p*q*r*(Iyy-Ixx);
+eqn5    = eqn5LHS == eqn5RHS;
 
 eqn6LHS = rho2*T*sin(xi);
 eqn6RHS = Izz*rDot + p*q*r*(Iyy-Ixx);
+eqn6    = eqn6LHS == eqn6RHS;
 
 
 % Solve equations of motion.
-nonlinSol = solve([eqn1, eqn2, eqn3, eqn4, eqn5, eqn6], ...
-    [xDDot, yDDot, zDDot, thetaDDot psiDDot phiDDot]);
+nonLinSol = solve([eqn1, eqn2, eqn3, eqn4, eqn5, eqn6], ...
+    [xDDot, yDDot, zDDot, thetaDDot psiDDot phiDDot]) % Nonlinear solution.
 
 
-% Spits out all the taylor series for all right and left hand sides.
-O = 2;
+% Spits out all the taylor series for all right and left hand sides. Define
+% base points for approximations here. Some rules:
+%   - By default all angles should be approximated about 0 [deg], this is
+%     accurate till roughly 30 [deg].
+%   - Approximation fails if T0 = 0, reason for this is unknown.
+O = 2; % Order of Taylor series. Note that O > 2 is nonlinear!
 
-x0 = 0;
-y0 = 0;
-z0 = 0;
-xDot0 =  0;
-yDot0 = 0;
-zDot0 =  0;
-xDDot0 =  0;
-yDDot0 =  0;
-zDDot0 = 0;
-theta0 =  0;
-thetaDot0 =  0;
-thetaDDot0 =   0;
-psi0 = 0;
-psiDot0 = 0;
-psiDDot0 = 0;
-phi0 = 0;
-phiDot0 =  0;
-phiDDot0 = 0;
-T0 = 0;
-xi0 = 0;
-zeta0 = 0;
-tauR0 = 0;
+    x0 = 0;      y0 = 0;      z0 = 0;
+ xDot0 = 0;   yDot0 = 0;   zDot0 =  0;
+xDDot0 = 0;  yDDot0 = 0;  zDDot0 = 0;
 
-t1L = taylor(eqn1LHS, [T, xi, zeta, theta], [T0, xi0, zeta0, theta0], Order=O);
-t1R = taylor(eqn1RHS, [xDDot, theta, psi, yDDot], ...
+theta0 = 0;  thetaDot0 = 0;  thetaDDot0 = 0;
+  psi0 = 0;    psiDot0 = 0;    psiDDot0 = 0;
+  phi0 = 0;    phiDot0 = 0;    phiDDot0 = 0;
+  xi0  = 0; 
+ zeta0 = 0;
+
+syms T0 tauR0 % Useful for seeing where there show up in linearized solutions. 
+              % Comment out for a specific solutions.
+%T0 = 1; tauR0 = 0;
+
+t1LHS = taylor(eqn1LHS, [T, xi, zeta, theta], [T0, xi0, zeta0, theta0], Order=O);
+t1RHS = taylor(eqn1RHS, [xDDot, theta, psi, yDDot], ...
     [xDDot0, theta0, psi0, yDDot0], Order=O);
-t2L = taylor(eqn2LHS, [T, xi, phi, theta], [T0, xi0, phi0, theta0], Order=O);
-t2R = taylor(eqn2RHS, [xDDot, yDDot, zDDot, phi, psi, theta], ...
+t2LHS = taylor(eqn2LHS, [T, xi, phi, theta], [T0, xi0, phi0, theta0], Order=O);
+t2RHS = taylor(eqn2RHS, [xDDot, yDDot, zDDot, phi, psi, theta], ...
     [xDDot0, yDDot0, zDDot0, phi0, psi0, theta0], Order=O);
-t3L = taylor(eqn3LHS, [T, xi, zeta, phi, theta], ...
+t3LHS = taylor(eqn3LHS, [T, xi, zeta, phi, theta], ...
     [T0, xi0, zeta0, phi0, theta0], Order=O);
-t3R = taylor(eqn3RHS, [xDDot, yDDot, zDDot, phi, psi, theta], ...
+t3RHS = taylor(eqn3RHS, [xDDot, yDDot, zDDot, phi, psi, theta], ...
     [xDDot0, yDDot0, zDDot0, phi0, psi0, theta0], Order=O);
-t4L = taylor(eqn4LHS, tauR, tauR0, Order=O);
-t4R = taylor(eqn4RHS, [phiDDot, psiDDot, theta, phi, psi, thetaDot, ...
+t4LHS = taylor(eqn4LHS, tauR, tauR0, Order=O);
+t4RHS = taylor(eqn4RHS, [phiDDot, psiDDot, theta, phi, psi, thetaDot, ...
     phiDot, psiDot], [phiDDot0, psiDDot0, theta0, phi0, psi0, thetaDot0, ...
     phiDot0, psiDot0], Order=O);
-t5L = taylor(eqn5LHS, [T, xi, zeta], [T0, xi0, zeta0], Order=O);
-t5R = taylor(eqn5RHS, [thetaDDot, psiDDot, phi, psi, theta, phiDot, ...
+t5LHS = taylor(eqn5LHS, [T, xi, zeta], [T0, xi0, zeta0], Order=O);
+t5RHS = taylor(eqn5RHS, [thetaDDot, psiDDot, phi, psi, theta, phiDot, ...
     psiDot, thetaDot], [thetaDDot0, psiDDot0, phi0, psi0, theta0, ...
     phiDot0, psiDot0, thetaDot0], Order=O);
-t6L = taylor(eqn6LHS, [T, xi], [T0, xi0], Order=O);
-t6R = taylor(eqn6RHS, [thetaDDot, psiDDot, phi, psi, theta, phiDot, ...
+t6LHS = taylor(eqn6LHS, [T, xi], [T0, xi0], Order=O);
+t6RHS = taylor(eqn6RHS, [thetaDDot, psiDDot, phi, psi, theta, phiDot, ...
     psiDot, thetaDot], [thetaDDot0, psiDDot0, phi0, psi0, theta0, ...
     phiDot0, psiDot0, thetaDot0], Order=O);
 
 
 % Solve linearized equations of motion.
+leqn1 = t1LHS == t1RHS;
+leqn2 = t2LHS == t2RHS;
+leqn3 = t3LHS == t3RHS;
+leqn4 = t4LHS == t4RHS;
+leqn5 = t5LHS == t5RHS;
+leqn6 = t6LHS == t6RHS;
 
-
-leqn1 = t1L == t1R;
-leqn2 = t2L == t2R;
-leqn3 = t3L == t3R;
-leqn4 = t4L == t4R;
-leqn5 = t5L == t5R;
-leqn6 = t6L == t6R;
-
-solve([leqn1, leqn2, leqn3, leqn4, leqn5, leqn6], ...
-    [xDDot, yDDot, zDDot, thetaDDot psiDDot phiDDot])
+linSol = solve([leqn1, leqn2, leqn3, leqn4, leqn5, leqn6], ...
+    [xDDot, yDDot, zDDot, thetaDDot psiDDot phiDDot]) % Linear solution.
