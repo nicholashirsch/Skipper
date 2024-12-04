@@ -41,9 +41,9 @@ clear; clc;
 syms x y z xDot yDot zDot xDDot yDDot zDDot ...
     theta thetaDot thetaDDot psi psiDot psiDDot phi phiDot phiDDot...
     T xi zeta M g Ixx Iyy Izz rho2 tauR ...
-    x0 y0 z0 xDot0 yDot0 zDot0 xDDot0 yDDot0 zDDot0 ...
-    theta0 thetaDot0 thetaDDot0 psi0 psiDot0 psiDDot0 phi0 phiDot0 phiDDot0...
-    T0 xi0 zeta0 tauR0
+%    x0 y0 z0 xDot0 yDot0 zDot0 xDDot0 yDDot0 zDDot0 ...
+%    theta0 thetaDot0 thetaDDot0 psi0 psiDot0 psiDDot0 phi0 phiDot0 phiDDot0...
+%    T0 xi0 zeta0 tauR0
 
 
 % p, q, r, pDot, qDot, and rDot are intermediate variables which may be
@@ -102,31 +102,71 @@ eqn6  = rho2*T*sin(xi) == Izz*rDot + p*q*r*(Iyy-Ixx);
 eqn6LHS = rho2*T*sin(xi);
 eqn6RHS = Izz*rDot + p*q*r*(Iyy-Ixx);
 
+
 % Solve equations of motion.
-solve([eqn1, eqn2, eqn3, eqn4, eqn5, eqn6], ...
-    [xDDot, yDDot, zDDot, thetaDDot psiDDot phiDDot])
+nonlinSol = solve([eqn1, eqn2, eqn3, eqn4, eqn5, eqn6], ...
+    [xDDot, yDDot, zDDot, thetaDDot psiDDot phiDDot]);
 
 
 % Spits out all the taylor series for all right and left hand sides.
-taylor(eqn1LHS, [T, xi, zeta, theta], [T0, xi0, zeta0, theta0], Order=2)
-taylor(eqn1RHS, [xDDot, theta, psi, yDDot], ...
-    [xDDot0, theta0, psi0, yDDot0], Order=2)
-taylor(eqn2LHS, [T, xi, phi, theta], [T0, xi0, phi0, theta0], Order=2)
-taylor(eqn2RHS, [xDDot, yDDot, zDDot, phi, psi, theta], ...
-    [xDDot0, yDDot0, zDDot0, phi0, psi0, theta0], Order=2)
-taylor(eqn3LHS, [T, xi, zeta, phi, theta], ...
-    [T0, xi0, zeta0, phi0, theta0], Order=2)
-taylor(eqn3RHS, [xDDot, yDDot, zDDot, phi, psi, theta], ...
-    [xDDot0, yDDot0, zDDot0, phi0, psi0, theta0], Order=2)
-taylor(eqn4LHS, tauR, tauR0, Order=2)
-taylor(eqn4RHS, [phiDDot, psiDDot, theta, phi, psi, thetaDot, ...
+O = 2;
+
+x0 = 0;
+y0 = 0;
+z0 = 0;
+xDot0 =  0;
+yDot0 = 0;
+zDot0 =  0;
+xDDot0 =  0;
+yDDot0 =  0;
+zDDot0 = 0;
+theta0 =  0;
+thetaDot0 =  0;
+thetaDDot0 =   0;
+psi0 = 0;
+psiDot0 = 0;
+psiDDot0 = 0;
+phi0 = 0;
+phiDot0 =  0;
+phiDDot0 = 0;
+T0 = 0;
+xi0 = 0;
+zeta0 = 0;
+tauR0 = 0;
+
+t1L = taylor(eqn1LHS, [T, xi, zeta, theta], [T0, xi0, zeta0, theta0], Order=O);
+t1R = taylor(eqn1RHS, [xDDot, theta, psi, yDDot], ...
+    [xDDot0, theta0, psi0, yDDot0], Order=O);
+t2L = taylor(eqn2LHS, [T, xi, phi, theta], [T0, xi0, phi0, theta0], Order=O);
+t2R = taylor(eqn2RHS, [xDDot, yDDot, zDDot, phi, psi, theta], ...
+    [xDDot0, yDDot0, zDDot0, phi0, psi0, theta0], Order=O);
+t3L = taylor(eqn3LHS, [T, xi, zeta, phi, theta], ...
+    [T0, xi0, zeta0, phi0, theta0], Order=O);
+t3R = taylor(eqn3RHS, [xDDot, yDDot, zDDot, phi, psi, theta], ...
+    [xDDot0, yDDot0, zDDot0, phi0, psi0, theta0], Order=O);
+t4L = taylor(eqn4LHS, tauR, tauR0, Order=O);
+t4R = taylor(eqn4RHS, [phiDDot, psiDDot, theta, phi, psi, thetaDot, ...
     phiDot, psiDot], [phiDDot0, psiDDot0, theta0, phi0, psi0, thetaDot0, ...
-    phiDot0, psiDot0], Order=2)
-taylor(eqn5LHS, [T, xi, zeta], [T0, xi0, zeta0], Order=2)
-taylor(eqn5RHS, [thetaDDot, psiDDot, phi, psi, theta, phiDot, ...
+    phiDot0, psiDot0], Order=O);
+t5L = taylor(eqn5LHS, [T, xi, zeta], [T0, xi0, zeta0], Order=O);
+t5R = taylor(eqn5RHS, [thetaDDot, psiDDot, phi, psi, theta, phiDot, ...
     psiDot, thetaDot], [thetaDDot0, psiDDot0, phi0, psi0, theta0, ...
-    phiDot0, psiDot0, thetaDot0], Order=2)
-taylor(eqn6LHS, [T, xi], [T0, xi0], Order=2)
-taylor(eqn6RHS, [thetaDDot, psiDDot, phi, psi, theta, phiDot, ...
+    phiDot0, psiDot0, thetaDot0], Order=O);
+t6L = taylor(eqn6LHS, [T, xi], [T0, xi0], Order=O);
+t6R = taylor(eqn6RHS, [thetaDDot, psiDDot, phi, psi, theta, phiDot, ...
     psiDot, thetaDot], [thetaDDot0, psiDDot0, phi0, psi0, theta0, ...
-    phiDot0, psiDot0, thetaDot0], Order=2)
+    phiDot0, psiDot0, thetaDot0], Order=O);
+
+
+% Solve linearized equations of motion.
+
+
+leqn1 = t1L == t1R;
+leqn2 = t2L == t2R;
+leqn3 = t3L == t3R;
+leqn4 = t4L == t4R;
+leqn5 = t5L == t5R;
+leqn6 = t6L == t6R;
+
+solve([leqn1, leqn2, leqn3, leqn4, leqn5, leqn6], ...
+    [xDDot, yDDot, zDDot, thetaDDot psiDDot phiDDot])
