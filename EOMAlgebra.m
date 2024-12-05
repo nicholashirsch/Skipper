@@ -26,9 +26,9 @@ clear; clc;
 %                     x, y, z: Positions.
 %            xDot, yDot, zDot: Velocities.
 %         xDDot, yDDot, zDDot: Accelerations.
-%             theta, phi, psi: I -> U euler angles (pitch, roll, yaw.)
-%    thetaDot, phiDot, psiDot: Angular velocities of Euler angles in I.
-% thetaDDot, phiDDot, psiDDot: Angular accelerations of Euler angles in I.
+%             theta, phi, psi: I -> U Tait-Bryan angles (pitch, roll, yaw.)
+%    thetaDot, phiDot, psiDot: Angular velocities of Tait-Bryan angles.
+% thetaDDot, phiDDot, psiDDot: Angular accelerations of Tait-Bryan angles.
 %                           T: Thrust.
 %                          xi: First gimbal angle.
 %                        zeta: Second gimbal angle.
@@ -36,7 +36,7 @@ clear; clc;
 %                        rho2: Displacement of Skipper's CT relative to its CM.
 %                           M: Skipper's mass.
 %                           g: Acceleration due to gravity.
-%                        tauR: Reaction wheel torque.
+%                        tauR: Reaction wheel torque magnitude.
 syms x y z xDot yDot zDot xDDot yDDot zDDot ...
     theta thetaDot thetaDDot psi psiDot psiDDot phi phiDot phiDDot...
     T xi zeta M g Ixx Iyy Izz rho2 tauR ...
@@ -65,19 +65,20 @@ Tt2u = Tu2t.';
 %   4: Euler's 1st law of rigid bodies.
 %   5: Euler's 2nd law of rigid bodies
 % In addition, the following variables are used:
-%              rho: Position.
-%                v: Velocity.
-%                a: Acceleration.
-%          p, q, r: Angular velocity components.
-% pDot, qDot, rDot: Angular acceleration components.
-%            omega: Angular velocity.
-%         omegaDot: Angular accelerations.
-%                S: Euler angle to angular veloctiy transformation matrix.
-%                I: Rotational inertia (rigid cylinder about its axis of symmetry).
-%                H: Angular momentum.
-%               Fg: Force due gravity.
-%               Ft: Force due to thrust.
-%            tauR : Torque due to reaction wheels. 
+%                            rho: Position.
+%                              v: Velocity.
+%                              a: Acceleration.
+%             alpha, beta, gamma: Euler angles (extrinsic).
+%    alphaDot, betaDot, gammaDot: Angular velocity components.
+% alphaDDot, betaDDot, gammaDDot: Angular acceleration components.
+%                          omega: Angular velocity.
+%                       omegaDot: Angular accelerations.
+%                              S: Euler angle to angular veloctiy transformation matrix.
+%                              I: Rotational inertia (rigid cylinder about its axis of symmetry).
+%                              H: Angular momentum.
+%                             Fg: Force due gravity.
+%                             Ft: Force due to thrust.
+%                          taur : Torque due to reaction wheels. 
 
 % STEP 1A: KINEMATICS - LINEAR.
 rho  = [x; y; z];             % Frame: N/A.
@@ -86,24 +87,24 @@ v    = [xDot; yDot; zDot];    % Frame: I.
 a    = [xDDot; yDDot; zDDot]; % Frame: I.
 
 % STEP 2: KINEMATICS - ANGULAR.
-p = phiDot - psiDot*sin(theta);                     % Frame: I.
-q = thetaDot*cos(phi) + psiDot*sin(phi)*cos(theta); % Frame: I.
-r = psiDot*cos(phi)*cos(theta) - thetaDot*sin(phi); % Frame: I.
+alphaDot = phiDot*cos(theta)*cos(psi) - thetaDot*sin(psi); % Frame: I.
+betaDot = thetaDot*cos(psi) + phiDot*cos(theta)*sin(psi);  % Frame: I.
+gammaDot = psiDot - phiDot*sin(theta);                     % Frame: I.
 
-pDot = phiDDot - psiDDot*sin(theta) - psiDot*thetaDot*cos(theta);
-qDot = thetaDDot*cos(phi) - thetaDot*phiDot*sin(phi) +...
-        psiDDot*sin(theta)*cos(theta) + ...
-        psiDot*(phiDot*cos(phi)*cos(theta)-thetaDot*cos(phi)*sin(theta));
-rDot = psiDDot*cos(phi)*cos(theta) + ...
-    psiDot*(-phiDot*sin(phi)*cos(theta)-thetaDot*cos(phi)*sin(theta)) ...
-    - thetaDDot*sin(phi) - thetaDot*phiDot*cos(phi);
+alphaDDot = phiDDot*cos(theta)*cos(phi) + ...
+    phiDot*(-thetaDot*sin(theta)*cos(psi)-psiDot*cos(theta)*sin(psi)) ...
+    - thetaDDot*sin(psi) - thetaDot*psiDot*cos(psi);
+betaDDot = thetaDDot*cos(psi) - thetaDot*psiDot*sin(psi) ...
+    + phiDDot*cos(theta)*sin(psi) ...
+    + phiDot*(-thetaDot*sin(theta)*sin(psi)+psiDot*cos(theta)*cos(psi));
+gammaDDot = psiDDot - phiDDot*sin(theta) - phiDot*thetaDot*cos(theta);
 
-omega = [p; q; r]; % Frame: I.
-omegaDot = [pDot; qDot; rDot];
+omega = [alphaDot; betaDot; gammaDot]; % Frame: I.
+omegaDot = [alphaDDot; betaDDot; gammaDDot];
 
-I     = [Ixx 0 0; 0 Iyy 0; 0 0 Izz];  % Frame: U.
-H     = I*omega;                      % Frame: I.
-HDot  = I*omegaDot;                   % Frame: I.
+I     = [Ixx 0 0; 0 Iyy 0; 0 0 Izz];            % Frame: U.
+H     = I*omega;                           % Frame: I.
+HDot  = I*omegaDot; % Frame: I.
 
 % STEP 3: KINETICS - FORCES AND TORQUES.
 Fg    = [0; 0; -M*g]; % Frame: I.
@@ -112,8 +113,8 @@ taur  = [0; 0; tauR]; % Frame: U
 
 % STEP 4: EULER'S FIRST LAW.
 % Note: Yields ux, uy, uz translational acceleration equations in V.
-firstLawLHS = Tt2u*Ft + Ti2u*Fg;
-firstLawRHS = Ti2u*M*a;
+firstLawLHS = Tu2i*Tt2u*Ft + Fg;
+firstLawRHS = M*a;
 firstLaw    = firstLawLHS == firstLawRHS;
 
 xEqnLHS = firstLawLHS(1);
@@ -130,8 +131,8 @@ zEqn    = zEqnLHS == zEqnRHS;
 
 % STEP 5: EULER'S SECOND LAW.
 % Note: Yields ux, uy, and uz rotational acceleration equations in V.
-secondLawLHS = Tt2u*cross(rho2, Ft) + taur;
-secondLawRHS = Ti2u*HDot;
+secondLawLHS = Tu2i*Tt2u*cross(rho2, Ft) + Tu2i*taur;
+secondLawRHS = HDot;
 secondLaw    = secondLawLHS == secondLawRHS;
 
 pEqnLHS = secondLawLHS(1);

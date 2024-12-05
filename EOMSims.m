@@ -15,13 +15,45 @@ clear; clc; clf; close all;
 
 
 % Define linearized equations of motion.
-T0    = 0;
-tauR0 = 0;
+
+    M = 1;
+    zeta = pi/10;
+    xi = 0;
+    T = 15;
+    g = 10;
+    Ixx = 1;
+    Iyy = 1;
+    Izz = 1;
+    tauR = 0;
+    T0 = 0;
+    tauR0 = 0;
+    rho2 = 1;
 
 p0 = [0 0 20 0 0 0 0 0 0 0 0 0]';
 
-[t, p] = ode113(@(t, p)skipperODE(t, p), [0, 25], p0);
+[t, p] = ode113(@(t, p)skipperODE(t, p, M, zeta, xi, T, g, Ixx, Iyy, Izz, tauR, T0, tauR0, rho2), 0:0.01:1, p0);
 
+phi = p(:, 7) ;
+theta = p(:, 8); 
+psi = p(:, 9) ;
+phiDot =p(:, 10);
+thetaDot = p(:, 11);
+psiDot = p(:, 12);
+phiDDot = (tauR0*p(8) - T0*p(9)*rho2)/Ixx; % phiDDot.
+thetaDDot = (T*rho2-phi*tauR0)/Iyy; % thetaDDot.
+psiDDot = (tauR + T0*phi*rho2 + T0*rho2*zeta)/Izz; % psiDDot.
+
+alphaDot = phiDot.*cos(theta).*cos(psi) - thetaDot.*sin(psi); % Frame: I.
+betaDot = thetaDot.*cos(psi) + phiDot.*cos(theta).*sin(psi);  % Frame: I.
+gammaDot = psiDot - phiDot.*sin(theta);                     % Frame: I.
+
+alpha = cumtrapz(alphaDot);
+beta = cumtrapz(betaDot);
+gamma = cumtrapz(gammaDot);
+
+alpha = mod(alpha, 2*pi);
+beta = mod(beta, 2*pi);
+gamma = mod(gamma, 2*pi);
 
 figure(1)
 hold on
@@ -57,13 +89,13 @@ hold off
 
 figure(3)
 hold on
-plot(t, p(:, 7))
-plot(t, p(:, 8))
-plot(t, p(:, 9))
+plot(t, alpha)
+plot(t, beta)
+plot(t, gamma)
 
 xl = xlabel('Time, $t$');
-yl = ylabel('Tait-Bryan Angles, $[\phi, \theta, \psi]$');
-ll = legend('$\phi(t)$', '$\theta(t)$', '$\psi(t)$', 'Location', 'southeast');
+yl = ylabel('Euler Angles, $[\alpha, \beta, \gamma]$');
+ll = legend('$\alpha(t)$', '$\beta(t)$', '$\gamma(t)$', 'Location', 'southeast');
 set(xl,'FontSize',16,'Interpreter','LaTeX');
 set(yl,'FontSize',16,'Interpreter','LaTeX');
 set(ll,'FontSize',16,'Interpreter','LaTeX');
@@ -73,13 +105,13 @@ hold off
 
 figure(4)
 hold on
-plot(t, p(:, 10))
-plot(t, p(:, 11))
-plot(t, p(:, 12))
+plot(t, alphaDot)
+plot(t, betaDot)
+plot(t, gammaDot)
 
 xl = xlabel('Time, $t$');
-yl = ylabel('Tait-Bryan Anglular Velocities, $[\dot{\phi}, \dot{\theta}, \dot{\psi}]$');
-ll = legend('$\dot{\phi}(t)$', '$\dot{\theta}(t)$', '$\dot{\psi}(t)$', 'Location', 'southeast');
+yl = ylabel('Euler Anglular Velocities, $[\dot{\alpha}, \dot{\beta}, \dot{\gamma}]$');
+ll = legend('$\dot{\alpha}(t)$', '$\dot{\beta}(t)$', '$\dot{\gamma}(t)$', 'Location', 'southeast');
 set(xl,'FontSize',16,'Interpreter','LaTeX');
 set(yl,'FontSize',16,'Interpreter','LaTeX');
 set(ll,'FontSize',16,'Interpreter','LaTeX');
@@ -87,32 +119,19 @@ set(gca,'FontSize',16,'TickLabelInterpreter','LaTeX');
 grid on;       
 hold off
 
-function pDot = skipperODE(t, p)
-    
-    M = 1;
-    zeta = 0;
-    xi = 0;
-    T = 0;
-    g = 10;
-    Ixx = 1;
-    Iyy = 1;
-    Izz = 1;
-    tauR = 0;
-    T0 = 1;
-    tauR0 = 1;
-    rho2 = 1;
+function pDot = skipperODE(t, p, M, zeta, xi, T, g, Ixx, Iyy, Izz, tauR, T0, tauR0, rho2)
     pDot    = zeros(12,1);
 
     pDot(1)  = p(4); % xDot.
     pDot(2)  = p(5); % yDot.
     pDot(3)  = p(6); % zDot.
-    pDot(4)  = (T0*xi + M*g*p(8))/M;  % xDDot.
-    pDot(5)  = -(T0*zeta + M*g*p(7))/M; % yDDot.
+    pDot(4)  = (T0*p(8) + T0*xi)/M;  % xDDot.
+    pDot(5)  = -(T0*p(7) + T0*zeta)/M; % yDDot.
     pDot(6)  = (T - M*g)/M; % zDDot.
     pDot(7)  = p(10); % phiDot.
     pDot(8)  = p(11); % thetaDot.
     pDot(9)  = p(12); % psiDot.
-    pDot(10) = 0; % phiDDot.
-    pDot(11) = T*rho2/Iyy; % thetaDDot.
-    pDot(12) = (tauR + T0*rho2*zeta)/Izz; % psiDDot.
+    pDot(10) = (tauR0*p(8) - T0*p(9)*rho2)/Ixx; % phiDDot.
+    pDot(11) = (T*rho2-p(7)*tauR0)/Iyy; % thetaDDot.
+    pDot(12) = (tauR + T0*p(7)*rho2 + T0*rho2*zeta)/Izz; % psiDDot.
 end
