@@ -12,20 +12,20 @@ function rMatrix = euler2rMatrix(angle, axis)
 %           EULER GIVEN ANGLE.
 % INPUTS:  
 %   angle: Euler angle of rotation - double or symbolic.
-%    axis: Intrinsic axis to peform rotation about - 3, 2, or 1.
+%    axis: Axis to peform rotation about - 1, 2, or 3.
 % OUTPUTS:
 %   rMatrix: Rotation matrix.
 
 switch axis
-    case 1 % x-axis rotation.
+    case 1 % 1-axis rotation.
         rMatrix = [1       0           0    ;
                    0  cos(angle)  sin(angle);
                    0 -sin(angle)  cos(angle)];
-    case 2 % y-axis rotation.
+    case 2 % 2-axis rotation.
          rMatrix = [cos(angle)      0    -sin(angle);
                         0           1          0    ;
                     sin(angle)      0     cos(angle)];
-    case 3 % z-axis rotation.
+    case 3 % 3-axis rotation.
          rMatrix = [cos(angle)  sin(angle) 0;
                    -sin(angle)  cos(angle) 0;
                         0           0     1];

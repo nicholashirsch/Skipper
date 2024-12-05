@@ -20,7 +20,7 @@ tauR0 = 0;
 
 p0 = [0 0 20 0 0 0 0 0 0 0 0 0]';
 
-[t, p] = ode113(@(t, p)skipperODE(t, p), [0, 25], p0)
+[t, p] = ode113(@(t, p)skipperODE(t, p), [0, 25], p0);
 
 
 figure(1)
@@ -98,18 +98,21 @@ function pDot = skipperODE(t, p)
     Iyy = 1;
     Izz = 1;
     tauR = 0;
+    T0 = 1;
+    tauR0 = 1;
+    rho2 = 1;
     pDot    = zeros(12,1);
 
-    pDot(1)  = p(4);
-    pDot(2)  = p(5);
-    pDot(3)  = p(6);
-    pDot(4)  = (2*p(7) + 2*zeta - pi)/(2*M);
-    pDot(5)  = -(p(9) + p(8) + xi)/M;
-    pDot(6)  = (T - M*g)/M;
-    pDot(7)  = p(10);
-    pDot(8)  = p(11);
-    pDot(9)  = p(12);
-    pDot(10) = (p(9) + p(8))/Iyy;
-    pDot(11) = -tauR/Izz;
-    pDot(12) = -(2*p(7)-pi)/(2*Ixx);
+    pDot(1)  = p(4); % xDot.
+    pDot(2)  = p(5); % yDot.
+    pDot(3)  = p(6); % zDot.
+    pDot(4)  = (T0*xi + M*g*p(8))/M;  % xDDot.
+    pDot(5)  = -(T0*zeta + M*g*p(7))/M; % yDDot.
+    pDot(6)  = (T - M*g)/M; % zDDot.
+    pDot(7)  = p(10); % phiDot.
+    pDot(8)  = p(11); % thetaDot.
+    pDot(9)  = p(12); % psiDot.
+    pDot(10) = 0; % phiDDot.
+    pDot(11) = T*rho2/Iyy; % thetaDDot.
+    pDot(12) = (tauR + T0*rho2*zeta)/Izz; % psiDDot.
 end
