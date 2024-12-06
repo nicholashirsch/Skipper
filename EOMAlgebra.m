@@ -179,43 +179,27 @@ eomVars = [x y z xDot yDot zDot xDDot yDDot zDDot theta thetaDot thetaDDot ...
 eomBasePoints = [x0 y0 z0 xDot0 yDot0 zDot0 xDDot0 yDDot0 zDDot0 theta0 ...
     thetaDot0 thetaDDot0 psi0 psiDot0 psiDDot0 phi0 phiDot0 phiDDot0 T0 xi0 zeta0 tauR0];
 
-% L. Katz and L. Dapp's BRILLIANT solution. Ie. linearize FIRST and then
-% solve SECOND.
-xNonLinRHS = nonLinSol.xDDot;
-xNonLinLHS = xDDot;
-yNonLinRHS = nonLinSol.yDDot;
-yNonLinLHS = yDDot;
-zNonLinRHS = nonLinSol.zDDot;
-zNonLinLHS = zDDot;
-
-thetaNonLinRHS = nonLinSol.thetaDDot;
-thetaNonLinLHS = thetaDDot;
-psiNonLinRHS   = nonLinSol.psiDDot;
-psiNonLinLHS   = psiDDot;
-phiNonLinRHS   = nonLinSol.phiDDot;
-phiNonLinLHS   = phiDDot;
-
-xLinTaylorLHS = taylor(xNonLinLHS, eomVars, eomBasePoints, Order=O);
-xLinTaylorRHS = taylor(xNonLinRHS, eomVars, eomBasePoints, Order=O);
-xLinTaylor    = xLinTaylorRHS == xLinTaylorLHS;
-yLinTaylorLHS = taylor(yNonLinLHS, eomVars, eomBasePoints, Order=O);
-yLinTaylorRHS = taylor(yNonLinRHS, eomVars, eomBasePoints, Order=O);
-yLinTaylor    = yLinTaylorRHS == yLinTaylorLHS;
-zLinTaylorLHS = taylor(zNonLinLHS, eomVars, eomBasePoints, Order=O);
-zLinTaylorRHS = taylor(zNonLinRHS, eomVars, eomBasePoints, Order=O);
-zLinTaylor    = zLinTaylorRHS == zLinTaylorLHS;
-
-thetaLinTaylorLHS = taylor(thetaNonLinLHS, eomVars, eomBasePoints, Order=O);
-thetaLinTaylorRHS = taylor(thetaNonLinRHS, eomVars, eomBasePoints, Order=O);
-thetaLinTaylor    = thetaLinTaylorRHS == thetaLinTaylorLHS;
-psiLinTaylorLHS   = taylor(psiNonLinLHS, eomVars, eomBasePoints, Order=O);
-psiLinTaylorRHS   = taylor(psiNonLinRHS, eomVars, eomBasePoints, Order=O);
-psiLinTaylor      = psiLinTaylorRHS == psiLinTaylorLHS;
-phiLinTaylorLHS   = taylor(phiNonLinLHS, eomVars, eomBasePoints, Order=O);
-phiLinTaylorRHS   = taylor(phiNonLinRHS, eomVars, eomBasePoints, Order=O);
-phiLinTaylor      = phiLinTaylorRHS == phiLinTaylorLHS;
+xTaylorLHS = taylor(xEqnLHS, eomVars, eomBasePoints, Order=O);
+xTaylorRHS = taylor(xEqnRHS, eomVars, eomBasePoints, Order=O);
+yTaylorLHS = taylor(yEqnLHS, eomVars, eomBasePoints, Order=O);
+yTaylorRHS = taylor(yEqnRHS, eomVars, eomBasePoints, Order=O);
+zTaylorLHS = taylor(zEqnLHS, eomVars, eomBasePoints, Order=O);
+zTaylorRHS = taylor(zEqnRHS, eomVars, eomBasePoints, Order=O);
+alphaTaylorLHS = taylor(alphaEqnLHS, eomVars, eomBasePoints, Order=O);
+alphaTaylorRHS = taylor(alphaEqnRHS, eomVars, eomBasePoints, Order=O);
+betaTaylorLHS = taylor(betaEqnLHS, eomVars, eomBasePoints, Order=O);
+betaTaylorRHS = taylor(betaEqnRHS, eomVars, eomBasePoints, Order=O);
+gammaTaylorLHS = taylor(gammaEqnLHS, eomVars, eomBasePoints, Order=O);
+gammaTaylorRHS = taylor(gammaEqnRHS, eomVars, eomBasePoints, Order=O);
 
 
-% Linearized solution.
-linSol = solve([xLinTaylor, yLinTaylor, zLinTaylor, thetaLinTaylor, psiLinTaylor, phiLinTaylor], ...
-[xDDot, yDDot, zDDot, phiDDot, thetaDDot, psiDDot]) % Linear solution.
+% Solve linearized equations of motion.
+xTaylor = xTaylorLHS == xTaylorRHS;
+yTaylor = yTaylorRHS == yTaylorLHS;
+zTaylor = zTaylorLHS == zTaylorRHS;
+alphaTaylor = alphaTaylorLHS == alphaTaylorRHS;
+betaTaylor = betaTaylorLHS == betaTaylorRHS;
+gammaTaylor = gammaTaylorLHS == gammaTaylorRHS;
+
+linSol = solve([xTaylor, yTaylor, zTaylor, alphaTaylor, betaTaylor, gammaTaylor], ...  
+    [xDDot, yDDot, zDDot,  phiDDot, thetaDDot, psiDDot]) % Linear solution.
