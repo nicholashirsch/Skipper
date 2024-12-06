@@ -17,7 +17,7 @@ clear; clc; clf; close all;
 % Define linearized equations of motion.
 
     M = 1;
-    zeta = pi/10;
+    zeta = 0;
     xi = 0;
     T = 15;
     g = 10;
@@ -25,13 +25,13 @@ clear; clc; clf; close all;
     Iyy = 1;
     Izz = 1;
     tauR = 0;
-    T0 = 0;
+    T0 = 0.1;
     tauR0 = 0;
     rho2 = 1;
 
 p0 = [0 0 20 0 0 0 0 0 0 0 0 0]';
 
-[t, p] = ode113(@(t, p)skipperODE(t, p, M, zeta, xi, T, g, Ixx, Iyy, Izz, tauR, T0, tauR0, rho2), 0:0.01:1, p0);
+[t, p] = ode113(@(t, p)skipperODE(t, p, M, zeta, xi, T, g, Ixx, Iyy, Izz, tauR, T0, tauR0, rho2), 0:0.01:10, p0);
 
 phi = p(:, 7) ;
 theta = p(:, 8); 
@@ -55,8 +55,9 @@ alpha = mod(alpha, 2*pi);
 beta = mod(beta, 2*pi);
 gamma = mod(gamma, 2*pi);
 
-figure(1)
 hold on
+subplot(2, 2, 1)
+
 plot(t, p(:, 1))
 plot(t, p(:, 2))
 plot(t, p(:, 3))
@@ -71,7 +72,7 @@ set(gca,'FontSize',16,'TickLabelInterpreter','LaTeX');
 grid on;       
 hold off
 
-figure(2)
+subplot(2, 2, 2)
 hold on
 plot(t, p(:, 4))
 plot(t, p(:, 5))
@@ -87,7 +88,7 @@ set(gca,'FontSize',16,'TickLabelInterpreter','LaTeX');
 grid on;       
 hold off
 
-figure(3)
+subplot(2, 2, 3)
 hold on
 plot(t, alpha)
 plot(t, beta)
@@ -103,7 +104,7 @@ set(gca,'FontSize',16,'TickLabelInterpreter','LaTeX');
 grid on;       
 hold off
 
-figure(4)
+subplot(2, 2, 4)
 hold on
 plot(t, alphaDot)
 plot(t, betaDot)
