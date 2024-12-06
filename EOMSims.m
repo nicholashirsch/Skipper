@@ -31,7 +31,7 @@ clear; clc; clf; close all;
 
 p0 = [0 0 20 0 0 0 0 0 0 0 0 0]';
 
-[t, p] = ode113(@(t, p)skipperODE(t, p, M, zeta, xi, T, g, Ixx, Iyy, Izz, tauR, T0, tauR0, rho2), 0:0.01:10, p0);
+[t, p] = ode113(@(t, p)skipperODE(t, p, M, zeta, xi, T, g, Ixx, Iyy, Izz, tauR, T0, tauR0), 0:0.01:10, p0);
 
 phi = p(:, 7) ;
 theta = p(:, 8); 
@@ -39,13 +39,13 @@ psi = p(:, 9) ;
 phiDot =p(:, 10);
 thetaDot = p(:, 11);
 psiDot = p(:, 12);
-phiDDot = (tauR0*p(8) - T0*p(9)*rho2)/Ixx; % phiDDot.
-thetaDDot = (T*rho2-phi*tauR0)/Iyy; % thetaDDot.
-psiDDot = (tauR + T0*phi*rho2 + T0*rho2*zeta)/Izz; % psiDDot.
+phiDDot = (tauR0*p(8))/Ixx; % phiDDot.
+thetaDDot = -(tauR0*p(7))/Iyy; % thetaDDot.
+psiDDot = tauR/Izz; % psiDDot.
 
 alphaDot = phiDot.*cos(theta).*cos(psi) - thetaDot.*sin(psi); % Frame: I.
 betaDot = thetaDot.*cos(psi) + phiDot.*cos(theta).*sin(psi);  % Frame: I.
-gammaDot = psiDot - phiDot.*sin(theta);                     % Frame: I.
+gammaDot = psiDot - phiDot.*sin(theta);                       % Frame: I.
 
 alpha = cumtrapz(alphaDot);
 beta = cumtrapz(betaDot);
@@ -120,7 +120,7 @@ set(gca,'FontSize',16,'TickLabelInterpreter','LaTeX');
 grid on;       
 hold off
 
-function pDot = skipperODE(t, p, M, zeta, xi, T, g, Ixx, Iyy, Izz, tauR, T0, tauR0, rho2)
+function pDot = skipperODE(t, p, M, zeta, xi, T, g, Ixx, Iyy, Izz, tauR, T0, tauR0)
     pDot    = zeros(12,1);
 
     pDot(1)  = p(4); % xDot.
@@ -132,7 +132,7 @@ function pDot = skipperODE(t, p, M, zeta, xi, T, g, Ixx, Iyy, Izz, tauR, T0, tau
     pDot(7)  = p(10); % phiDot.
     pDot(8)  = p(11); % thetaDot.
     pDot(9)  = p(12); % psiDot.
-    pDot(10) = (tauR0*p(8) - T0*p(9)*rho2)/Ixx; % phiDDot.
-    pDot(11) = (T*rho2-p(7)*tauR0)/Iyy; % thetaDDot.
-    pDot(12) = (tauR + T0*p(7)*rho2 + T0*rho2*zeta)/Izz; % psiDDot.
+    pDot(10) = (tauR0*p(8))/Ixx; % phiDDot.
+    pDot(11) = -(tauR0*p(7))/Iyy; % thetaDDot.
+    pDot(12) = tauR/Izz; % psiDDot.
 end
