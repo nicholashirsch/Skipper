@@ -45,8 +45,6 @@ syms x y z xDot yDot zDot xDDot yDDot zDDot ...
 %    T0 xi0 zeta0 tauR0
 
 
-
-
 % Define rotation matricies used in shifting all terms in the EOM to U.
 % The following transformations are used:
 %   I -> U: 3-2-1 transformation through psi, theta, phi.

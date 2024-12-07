@@ -11,8 +11,8 @@ function rMatrix = euler2rMatrix(angle, axis)
 % OVERVIEW: GENERATES A ROTATION MATRIX ABOUT THE GIVEN INTRINSIC AXIS BY THE
 %           EULER GIVEN ANGLE.
 % INPUTS:  
-%   angle: Euler angle of rotation - double or symbolic.
-%    axis: Axis to peform rotation about - 1, 2, or 3.
+%     angle: Euler angle of rotation - double or symbolic.
+%      axis: Axis to peform rotation about - 1, 2, or 3.
 % OUTPUTS:
 %   rMatrix: Rotation matrix.
 
