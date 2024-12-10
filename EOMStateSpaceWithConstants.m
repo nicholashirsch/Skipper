@@ -67,5 +67,3 @@ inputs = {'T', 'xi', 'zeta', 'tauR'};
 outputs = {'x' 'y' 'z' 'phi' 'theta' 'psi' 'xDot' 'yDot' 'zDot' 'phiDot' 'thetaDot' 'psiDot' '1'};
 
 skipper = ss(A,B,C,D,'statename',states,'inputname',inputs,'outputname',outputs, 'name', 'Skipper')
-
-

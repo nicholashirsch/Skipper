@@ -4,7 +4,7 @@
 % ________________________________________________________________________
 % 
 % BY:       FLORIDA ROCKET LAB - GNC SUBTEAM
-% EDITORS:  D. DUENAS, N. HIRSCH
+% EDITORS:  D. DUENAS, N. HIRSCH, L. KATZ
 % DATE:     12/03/2024
 %
 % OVERVIEW: THIS TAKES THE SOLVED EOMS AND CONSTRUCTS THE STATE SPACE MODEL
@@ -30,38 +30,40 @@ T0    = 1;
 tauR0 = 0;
 
 
-A = [0 0 0 1 0 0 0 0 0 0 0 0;  
-     0 0 0 0 1 0 0 0 0 0 0 0;  
-     0 0 0 0 0 1 0 0 0 0 0 0;  
-     0 0 0 0 0 0 0 T0/M 0 0 0 0;  
-     0 0 0 0 0 0 -T0/M 0 0 0 0 0;  
-     0 0 0 0 0 0 0 0 0 0 0 0;  
-     0 0 0 0 0 0 0 0 0 1 0 0;  
-     0 0 0 0 0 0 0 0 0 0 1 0;  
-     0 0 0 0 0 0 0 0 0 0 0 1;  
-     0 0 0 0 0 0 0 tauR0/Ixx 0 0 0 0;  
-     0 0 0 0 0 0 -tauR0/Iyy 0 0 0 0 0;  
-     0 0 0 0 0 0 0 0 0 0 0 0;];
+A = [0 0 0 0 0            0          1 0 0 0 0 0 0;  %xDot
+     0 0 0 0 0            0          0 1 0 0 0 0 0;  %yDot
+     0 0 0 0 0            0          0 0 1 0 0 0 0;  %zDot
+     0 0 0 0 0            0          0 0 0 1 0 0 0;  %phiDot 
+     0 0 0 0 0            0          0 0 0 0 1 0 0;  %thetaDot
+     0 0 0 0 0            0          0 0 0 0 0 1 0;  %psiDot
+     0 0 0 0 T0/M         0          0 0 0 0 0 0 0;  %xDDot
+     0 0 0 0 0            -T0/M      0 0 0 0 0 0 0;  %yDDot
+     0 0 0 0 0            0          0 0 0 0 0 0 -g; %zDDot
+     0 0 0 0 tauR0/Ixx    0          0 0 0 0 0 0 0;  %phiDDot
+     0 0 0 0 0            -tauR0/Iyy 0 0 0 0 0 0 0;  %thetaDDot
+     0 0 0 0 0            0          0 0 0 0 0 0 0;  %psiDDot
+     0 0 0 0 0            0          0 0 0 0 0 0 0]; %0
 
-B= [0 0 0 0 0;                    %xDot
-    0 0 0 0 0;                   %xDDot
-    0 0 0 0 0;                    %yDot
-    0 T0/M 0 0 0;                  %yDDot
-    0 0 -T0/M 0 0;                    %zDot
-    1/M 0 0 0 -1;                  %zDDot how should I input gravity
-    0 0 0 0 0;                    %phiDot
-    0 0 0 0 0;                    %phiDDot
-    0 0 0 0 0;                    %thetaDot
-    0 0 0 0 0;             %thetaDDot
-    0 0 0 0 0;                    %psiDot
-    0 0 0 1/Izz 0];    %psiDDot
+B= [0   0    0     0; %xDot
+    0   0    0     0; %yDot
+    0   0    0     0; %zDot
+    0   0    0     0; %phiDot
+    0   0    0     0; %thetaDot
+    0   0    0     0; %psiDot
+    0   T0/M 0     0; %xDDot
+    0   0    -T0/M 0; %yDDot
+    1/M 0    0     0; %zDDot
+    0   0    0     0; %phiDDot
+    0   0    0     0; %thetaDDot
+    0   0    0     0; %psiDDot
+    0   0    0     1/Izz];%0
 
-C = diag(ones(1, 12));
+C = diag(ones(1, 13));
 
 D = zeros(size(B));
 
-sys = ss(A, B, C, D)
-% states = {'x' 'xDot' 'y' 'yDot' 'z' 'zDot' 'phi' 'phiDot' 'theta' 'thetaDot' 'psi' 'psiDot'};
-% inputs = {'T' 'xi' 'zeta' 'tauR'};
-% outputs = {'x' 'xDot' 'y' 'yDot' 'z' 'zDot' 'phi' 'phiDot' 'theta' 'thetaDot' 'psi' 'psiDot'};
-% sys_ss = ss(A,B,C,D,'statename',states,'inputname',inputs,'outputname',outputs)
+states = {'x' 'y' 'z' 'phi' 'theta' 'psi' 'xDot' 'yDot' 'zDot' 'phiDot' 'thetaDot' 'psiDot' '1'};
+inputs = {'T', 'xi', 'zeta', 'tauR'};
+outputs = {'x' 'y' 'z' 'phi' 'theta' 'psi' 'xDot' 'yDot' 'zDot' 'phiDot' 'thetaDot' 'psiDot' '1'};
+
+skipper = ss(A,B,C,D,'statename',states,'inputname',inputs,'outputname',outputs, 'name', 'Skipper')
