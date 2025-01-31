@@ -20,20 +20,23 @@ clear; clc;
 
 % Set up the MATLAB symbolic environment for the EOM derived from Euler's
 % 1st and 2nd laws for rigid bodies. The following variables are used:
-syms u v w ...                % Velocities
-        uDot vDot wDot ...    % Accelerations.
-        theta phi psi ...     % Pitch, roll, and yaw.
-        p q r ...             % Angular rates.
-        pDot qDot rDot ...    % Angular rate derivatives.
-        xi zeta ...           % Gimbal angles.
-        M Ixx Iyy Izz ...     % Linear and rotational inertias.
-        rho1 rho2 ...
-        rho3x rho3y rho3z ... % Lever arm distances.
-        g ...                 % Acceleration due to gravity.
-        T tauR ...            % Control forces.
-        alpha beta ...        % Wind angles.
-        L D Q ...             % Aerodynamic forces.
-        Px Py Pz...           % Peturbation forces
+syms x y z ...                     % Displacements.
+        xDot yDot zDot ...         % Velocities in I.
+        u v w ...                  % Velocities in U.
+        uDot vDot wDot ...         % Accelerations.
+        theta phi psi ...          % Pitch, roll, and yaw.
+        thetaDot phiDot psiDot ... % Euler angle rates.
+        p q r ...                  % Angular rates in U.
+        pDot qDot rDot ...         % Angular rate derivatives.
+        xi zeta ...                % Gimbal angles.
+        M Ixx Iyy Izz ...          % Linear and rotational inertias.
+        rho1 rho2 ...     
+        rho3x rho3y rho3z ...      % Lever arm distances.
+        g ...                      % Acceleration due to gravity.
+        T tauR ...                 % Control forces.
+        alpha beta ...             % Wind angles.
+        L D Q ...                  % Aerodynamic forces.
+        Px Py Pz...                % Peturbation forces
         real % Avoid 'conj' popping up when performing matrix operations, 
              % always place after the last uncommented variable in 'syms' 
              % initialization.
@@ -89,6 +92,25 @@ second_law_LHS = cross(d1, Tw2u*F_aero) + cross(d2, Tt2u*F_thrust) + ...
 second_law_RHS = HDot; 
 second_law = second_law_LHS == second_law_RHS; % Where Q = CM.
 
+% First order differential equations relating linear and angular
+% displacement to the body-frame velocities. Needed for state space.
+S = [
+    1 sin(phi)*tan(theta) cos(phi)*tan(theta);
+    0 cos(phi) -sin(phi);
+    0 sin(phi)*sec(theta) cos(phi)*sec(theta)
+    ]; % Angular rates to euler angle rates conversion.
+
+avel_rel_LHS = [phiDot thetaDot psiDot]'; % Euler angle rates.
+avel_rel_RHS = S*omega;
+avel_rel = avel_rel_LHS == avel_rel_RHS; % Relation betwen euler angle 
+                                         % and body-frame rates.
+
+vel_rel_LHS = [xDot yDot zDot]'; % Body-frame velocity components.
+vel_rel_RHS = nu - [r*y + q*z -p*z+r*x -q*x+p*y]';
+vel_rel = vel_rel_LHS == vel_rel_RHS; % Relation betwen inertial  
+                                      % and body-frame velocities.
+
+
 % Solve the EOM using 'solve'.
 nonlinear_sol = solve([first_law, second_law], ...
     [uDot vDot wDot pDot qDot rDot])
@@ -97,22 +119,21 @@ nonlinear_sol = solve([first_law, second_law], ...
 % conditions. The second order terms have already been solved for and thus
 % need not have base points. Same goes for constants. Aerodynamic and
 % peturbation terms are neglected for now.
-syms theta0 phi0 psi0 ...     
+syms theta0 phi0 psi0 ...
         v0 u0 w0 ...
         p0 q0 r0 ...                      
         xi0 zeta0 ...                
-        T0 tauR0 ...                           
+        T0 tauR0 ... 
+        x0 y0 z0 ...
         real % Avoid 'conj' popping up when performing matrix operations, 
              % always place after the last uncommented variable in 'syms' 
              % initialization.
 
 order = 2; % Order of Taylor series. O > 2 is nonlinear!
 
-eom_variables = [theta psi phi u v w p q r T xi zeta tauR];
-% eom_base_points = [theta0 psi0 phi0 u0 v0 w0 ...
-%       p0 q0 r0 T0 xi0 zeta0 tauR0];
-eom_base_points = [0 0 0 0 0 0 0 0 0 ...
-        T0 0 0 tauR0]; % For when trimming for hovering.
+eom_variables = [x y z theta psi phi u v w p q r T xi zeta tauR];
+eom_base_points = [x0 y0 z0 theta0 psi0 phi0 u0 v0 w0 p0 q0 r0 ...
+        T0 xi0 zeta0 tauR0];
 
 first_law_LHS_linear = taylor(first_law_LHS, eom_variables, ...
         eom_base_points, Order=order);
@@ -123,8 +144,17 @@ second_law_LHS_linear = taylor(second_law_LHS, eom_variables, ...
 second_law_RHS_linear = taylor(second_law_RHS, eom_variables, ...
         eom_base_points, Order=order);
 
+avel_rel_RHS_linear = taylor(avel_rel_RHS, eom_variables, ...
+        eom_base_points, Order=order);
+vel_rel_RHS_linear = taylor(vel_rel_RHS, eom_variables, ...
+        eom_base_points, Order=order);
+
 first_law_linear = first_law_LHS_linear == first_law_RHS_linear;
 second_law_linear = second_law_LHS_linear == second_law_RHS_linear;
+
+avel_rel_linear = avel_rel_LHS == avel_rel_RHS_linear
+vel_rel_linear = vel_rel_LHS == vel_rel_RHS_linear
+
 
 % Solve the linearized EOM.
 linear_sol = solve([first_law_linear, second_law_linear], ...
