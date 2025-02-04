@@ -51,7 +51,7 @@ function [A, B, C, D, K] = lqrMatrices(theta0, psi0, phi0, u0, v0, w0, p0, q0, r
         -rho2*sin(zeta0)/Izz 0 0 -T0*rho2*cos(zeta0)/Izz;
     ];
 
-    f = [
+    d = [
         0;
         0;
         0;
